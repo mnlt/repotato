@@ -1,6 +1,6 @@
 # 🥔 repotato
 
-Discover, try and upvote awesome GitHub repos — from your terminal.
+Share, discover, try and upvote awesome GitHub repos - from your terminal.
 
 A feed of GitHub repos you browse in your terminal, one at a time.
 **An upvote is a real GitHub star.**
