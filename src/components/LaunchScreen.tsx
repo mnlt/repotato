@@ -114,6 +114,15 @@ export function LaunchScreen({
                 <Text color={palette.upvote}>{`npx repotato open ${slug}`}</Text>
               </Text>
             </Box>
+            {editable ? (
+              <Box marginTop={1} flexDirection="column">
+                <Text color={palette.dim}>Your repo? Add the badge to its README:</Text>
+                <Text color={palette.accent}>
+                  {`[![repotato](${SITE_URL}/api/badge/${slug})](${SITE_URL}/p/${slug})`}
+                </Text>
+              </Box>
+            ) : null}
+
             <Box marginTop={1}>
               <Text color={palette.dim}>{'Find it in the feed with "f" (list view).'}</Text>
             </Box>
