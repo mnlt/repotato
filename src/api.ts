@@ -101,6 +101,30 @@ export async function submitProduct(
   }
 }
 
+/** Record a usage event (tried / uninstalled). Keyed by install (+ github when
+ *  signed in). Fire-and-forget; stats only. */
+export async function trackEvent(opts: {
+  installId: string;
+  githubId: number | null;
+  productId: string;
+  type: "tried" | "uninstalled";
+}): Promise<void> {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/rpc/track_event`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        p_install_id: opts.installId,
+        p_github_id: opts.githubId,
+        p_product_id: opts.productId,
+        p_type: opts.type,
+      }),
+    });
+  } catch {
+    /* non-fatal */
+  }
+}
+
 /** Persist an upvote via the Edge Function (GitHub-verified). Returns the new
  *  authoritative count, or null on failure (caller keeps the optimistic value). */
 export async function castVote(

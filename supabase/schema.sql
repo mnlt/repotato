@@ -59,6 +59,7 @@ create table if not exists public.users (
   github_login text,
   os           text,
   terminals    text[] not null default '{}',
+  streak       integer not null default 0,
   created_at   timestamptz not null default now(),
   last_seen_at timestamptz not null default now()
 );
@@ -81,11 +82,11 @@ set search_path = public
 as $$
 begin
   insert into public.users
-    (install_id, os, terminals, github_id, github_login, last_seen_at)
+    (install_id, os, terminals, github_id, github_login, streak, last_seen_at)
   values (
     p_install_id, p_os,
     case when p_terminal is null then '{}'::text[] else array[p_terminal] end,
-    p_github_id, p_github_login, now()
+    p_github_id, p_github_login, 1, now()
   )
   on conflict (install_id) do update set
     os           = coalesce(excluded.os, public.users.os),
@@ -98,12 +99,54 @@ begin
         case when p_terminal is null then '{}'::text[] else array[p_terminal] end
       ) as t
     ),
+    streak       = case
+      when (public.users.last_seen_at at time zone 'utc')::date = (now() at time zone 'utc')::date
+        then public.users.streak
+      when (public.users.last_seen_at at time zone 'utc')::date = ((now() at time zone 'utc')::date - 1)
+        then public.users.streak + 1
+      else 1
+    end,
     last_seen_at = now();
 end;
 $$;
 
 grant execute on function
   public.register_user(uuid, text, text, bigint, text) to anon, authenticated;
+
+-- ── events (usage stats: tried / uninstalled; for the future profile screen) ─
+create table if not exists public.events (
+  id          bigint generated always as identity primary key,
+  install_id  uuid not null,
+  github_id   bigint,
+  product_id  uuid not null references public.products(id) on delete cascade,
+  type        text not null check (type in ('tried','uninstalled')),
+  created_at  timestamptz not null default now()
+);
+
+alter table public.events enable row level security;
+-- No public read; writes go through track_event() (security definer).
+
+create or replace function public.track_event(
+  p_install_id uuid,
+  p_github_id  bigint,
+  p_product_id uuid,
+  p_type       text
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_type not in ('tried', 'uninstalled') then
+    return;
+  end if;
+  insert into public.events (install_id, github_id, product_id, type)
+  values (p_install_id, p_github_id, p_product_id, p_type);
+end;
+$$;
+
+grant execute on function
+  public.track_event(uuid, bigint, uuid, text) to anon, authenticated;
 
 -- ── seed (the walking-skeleton catalogue) ───────────────────────────────────
 insert into public.products

@@ -9,6 +9,7 @@ import {
   castVote,
   submitProduct,
   getAppStatus,
+  trackEvent,
   type AppStatus,
 } from "../api.js";
 import { getInstallId, hasWelcomed, markWelcomed } from "../identity.js";
@@ -34,6 +35,15 @@ import { WelcomeScreen } from "./WelcomeScreen.js";
 
 type Flash = { text: string; color: string } | null;
 type AuthPrompt = { code: string; url: string } | null;
+
+/** Strip the agent's tracking markers from text shown to the user. */
+function stripMarkers(text: string): string {
+  return text
+    .split("\n")
+    .filter((l) => !l.includes("REPOTATO_EVENT:"))
+    .join("\n")
+    .trim();
+}
 
 function useTerminalSize() {
   const { stdout } = useStdout();
@@ -98,6 +108,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   const askSystem = useRef<string>("");
   const askChild = useRef<ChildProcess | null>(null);
   const askAcc = useRef<string>("");
+  const askProductId = useRef<string | null>(null);
   const ctxRef = useRef<AskContext | null>(null);
   if (!ctxRef.current) ctxRef.current = gatherContext();
 
@@ -335,6 +346,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   function openAsk(product: Product) {
     askSession.current = null;
     askAcc.current = "";
+    askProductId.current = product.id;
     askSystem.current = buildSystemPrompt(product, ctxRef.current!);
     setMessages([]);
     setAskInput("");
@@ -358,13 +370,26 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       cb: {
         onText: (t) => {
           askAcc.current += t;
-          setStreamingText(askAcc.current);
+          setStreamingText(stripMarkers(askAcc.current));
         },
         onTool: (n) => setToolNote(`running ${n}…`),
         onDone: (sid) => {
           askSession.current = sid;
-          const final = askAcc.current;
-          setMessages((m) => [...m, { role: "assistant", text: final || "(no response)" }]);
+          const raw = askAcc.current;
+          const pid = askProductId.current;
+          if (pid) {
+            const ev = (t: "tried" | "uninstalled") =>
+              trackEvent({
+                installId: getInstallId(),
+                githubId: authRef.current?.github_id ?? null,
+                productId: pid,
+                type: t,
+              });
+            if (raw.includes("REPOTATO_EVENT:installed")) ev("tried");
+            if (raw.includes("REPOTATO_EVENT:uninstalled")) ev("uninstalled");
+          }
+          const clean = stripMarkers(raw);
+          setMessages((m) => [...m, { role: "assistant", text: clean || "(no response)" }]);
           setStreaming(false);
           setStreamingText("");
           setToolNote("");

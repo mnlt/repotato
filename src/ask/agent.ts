@@ -31,6 +31,7 @@ export function buildSystemPrompt(p: Product, ctx: AskContext): string {
     `Their environment: OS ${ctx.osName}, terminal ${ctx.terminal}${ctx.fromCwd ? `, currently working in ${ctx.fromCwd}` : ""}.`,
     `You can: explain what it is and why it might fit what they're building; INSTALL it and let them try it; UNINSTALL it cleanly (leave no trace) if they don't like it; or answer anything they ask, including reviewing the repo's code.`,
     `When they ask you to install / try / uninstall, just do it with Bash — don't ask for permission to proceed, they already opted in. Be concise and practical. Always reply in the user's language.`,
+    `IMPORTANT tracking markers: if you SUCCESSFULLY install the repo, output on its own final line exactly "REPOTATO_EVENT:installed". If you SUCCESSFULLY uninstall it, output exactly "REPOTATO_EVENT:uninstalled". Put nothing after that line. Only emit a marker when the action truly succeeded.`,
   ].join("\n");
 }
 
