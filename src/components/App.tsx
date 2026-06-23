@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import os from "node:os";
 import type { ChildProcess } from "node:child_process";
 import { Box, Text, useApp, useInput, useStdout } from "ink";
@@ -32,6 +32,7 @@ import { Card } from "./Card.js";
 import { AskScreen, type Msg } from "./AskScreen.js";
 import { LaunchScreen, type LaunchStep } from "./LaunchScreen.js";
 import { WelcomeScreen } from "./WelcomeScreen.js";
+import { ListScreen } from "./ListScreen.js";
 
 type Flash = { text: string; color: string } | null;
 type AuthPrompt = { code: string; url: string } | null;
@@ -92,13 +93,14 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   const hydratedVotes = useRef<Set<string>>(new Set());
 
   // Ask mode.
-  const [mode, setMode] = useState<"feed" | "ask" | "launch" | "welcome">(
+  const [mode, setMode] = useState<"feed" | "ask" | "launch" | "welcome" | "list">(
     process.env.REPOTATO_MODE === "launch"
       ? "launch"
       : hasWelcomed()
         ? "feed"
         : "welcome",
   );
+  const [listIndex, setListIndex] = useState(0);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [askInput, setAskInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -129,6 +131,17 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
     ? ""
     : status?.message ||
       (updateAvailable ? "update available — run: npx repotato@latest" : "");
+
+  // List view: products launched today or yesterday, in feed (upvote) order.
+  const recent = useMemo<Product[]>(() => {
+    if (!feed) return [];
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const cutoff = start.getTime() - 86_400_000; // start of yesterday
+    return feed.filter(
+      (p) => !p.created_at || new Date(p.created_at).getTime() >= cutoff,
+    );
+  }, [feed]);
 
   useEffect(() => {
     getFeed().then(setFeed);
@@ -483,6 +496,27 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       return;
     }
 
+    // List mode.
+    if (mode === "list") {
+      if ((key.ctrl && input === "c") || input === "q") {
+        exit();
+      } else if (key.upArrow) {
+        setListIndex((i) => Math.max(0, i - 1));
+      } else if (key.downArrow) {
+        setListIndex((i) => Math.min(recent.length - 1, i + 1));
+      } else if (key.return) {
+        const sel = recent[listIndex];
+        if (sel && feed) {
+          const fi = feed.findIndex((p) => p.id === sel.id);
+          if (fi >= 0) setIndex(fi);
+        }
+        setMode("feed");
+      } else if (input === "c" || key.escape) {
+        setMode("feed");
+      }
+      return;
+    }
+
     // Ask mode.
     if (mode === "ask") {
       if (key.ctrl && input === "c") {
@@ -545,6 +579,10 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       showFlash("🔗 Link copied — share it!", palette.accent);
     } else if (input === "l" || input === "L") {
       enterLaunch();
+    } else if (input === "f") {
+      const ri = recent.findIndex((p) => p.id === product.id);
+      setListIndex(ri >= 0 ? ri : 0);
+      setMode("list");
     }
   });
 
@@ -679,6 +717,23 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
 
   const product = feed[index];
 
+  // ── List view (today & yesterday) ──
+  if (mode === "list") {
+    return (
+      <Box
+        flexDirection="column"
+        width={centered ? cols : undefined}
+        alignItems={centered ? "center" : "flex-start"}
+        paddingY={1}
+      >
+        <ListScreen width={cardWidth} items={recent} selected={listIndex} />
+        <Box width={cardWidth} justifyContent="center" marginTop={1}>
+          <Text color={palette.dim}>↑/↓ select   enter open   c carousel   q quit</Text>
+        </Box>
+      </Box>
+    );
+  }
+
   // ── Ask screen ──
   if (mode === "ask") {
     return (
@@ -747,7 +802,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
         <Text color={flash ? flash.color : palette.dim}>
           {flash
             ? flash.text
-            : "←/→ nav  ↑ upvote  v demo  a ask  s share  L launch  q quit"}
+            : "←/→ nav  ↑ upvote  f list  a ask  v demo  s share  L launch  q quit"}
         </Text>
       </Box>
     </Box>

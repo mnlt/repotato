@@ -24,4 +24,5 @@ export interface Product {
   tags: string[];
   stars_cached: number;
   upvotes_count: number;
+  created_at?: string;
 }
