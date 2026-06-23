@@ -1,0 +1,61 @@
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./config";
+
+export interface Product {
+  id: string;
+  slug: string;
+  name: string;
+  tagline: string;
+  description: string;
+  repo_full_name: string;
+  built_by_login: string;
+  built_by_avatar_url: string;
+  posted_by_login: string | null;
+  cover_url: string;
+  tags: string[];
+  stars_cached: number;
+  upvotes_count: number;
+  created_at: string;
+}
+
+const headers = {
+  apikey: SUPABASE_ANON_KEY,
+  authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+};
+
+/** Approved products, ranked by upvotes. RLS limits this to approved rows. */
+export async function getProducts(): Promise<Product[]> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/products?status=eq.approved&order=upvotes_count.desc,created_at.desc&select=*`,
+    { headers, next: { revalidate: 60 } },
+  );
+  if (!res.ok) return [];
+  return (await res.json()) as Product[];
+}
+
+export async function getProduct(slug: string): Promise<Product | null> {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&status=eq.approved&select=*`,
+    { headers, next: { revalidate: 60 } },
+  );
+  if (!res.ok) return null;
+  const rows = (await res.json()) as Product[];
+  return rows[0] ?? null;
+}
+
+export function formatCount(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) {
+    const k = n / 1000;
+    return (k < 100 ? k.toFixed(1) : Math.round(k).toString()) + "k";
+  }
+  return (n / 1_000_000).toFixed(1) + "M";
+}
+
+/** "today" / "yesterday" / "3d ago" — the PH feel without empty daily buckets. */
+export function relativeDay(iso: string, now: number): string {
+  const days = Math.floor((now - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days < 30) return `${days}d ago`;
+  return `${Math.floor(days / 30)}mo ago`;
+}
