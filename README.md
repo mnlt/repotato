@@ -1,6 +1,6 @@
 # 🥔 repotato
 
-Share, discover, try and upvote awesome GitHub repos - from your terminal.
+Share, discover, try out, and support amazing GitHub repositories - all from your terminal while Claude works.
 
 A feed of GitHub repos you browse in your terminal, one at a time.
 **An upvote is a real GitHub star.**
