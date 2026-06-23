@@ -584,9 +584,6 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       doVote(product, "up");
     } else if (key.downArrow) {
       doVote(product, "down");
-    } else if (input === "v") {
-      openUrl(product.demo_url ?? product.cover_url);
-      showFlash(`Opening ${product.name}'s demo in your browser…`, palette.accent);
     } else if (input === "a") {
       openAsk(product);
     } else if (input === "s") {
@@ -818,7 +815,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
         <Text color={flash ? flash.color : palette.dim}>
           {flash
             ? flash.text
-            : "←/→ nav  ↑ upvote  f list  a ask  v demo  s share  L launch  q quit"}
+            : "←/→ nav  ↑ upvote  f list  a ask  s share  L launch  q quit"}
         </Text>
       </Box>
     </Box>

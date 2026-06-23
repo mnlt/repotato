@@ -82,14 +82,9 @@ export function Card({ product, coverLines, width, upvotes, stars, voted }: Card
         </Text>
       </Box>
 
-      {/* Tagline (the hook) */}
-      <Box marginTop={1}>
-        <Text bold>{product.tagline}</Text>
-      </Box>
-
-      {/* Description */}
+      {/* Description (the full text, in the main colour) */}
       <Box width={inner} marginTop={1}>
-        <Text color={palette.dim}>{product.description}</Text>
+        <Text>{product.description}</Text>
       </Box>
     </Box>
   );

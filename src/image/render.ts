@@ -16,9 +16,19 @@ export interface Cover {
 }
 
 async function fetchBytes(url: string): Promise<Buffer> {
-  const res = await fetch(url, { headers: { "user-agent": "repotato" } });
-  if (!res.ok) throw new Error(`cover fetch ${res.status}`);
-  return Buffer.from(await res.arrayBuffer());
+  let lastErr = "cover fetch failed";
+  // GitHub's OpenGraph service rate-limits (429), esp. in bursts — retry briefly.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(url, { headers: { "user-agent": "repotato" } });
+    if (res.ok) return Buffer.from(await res.arrayBuffer());
+    lastErr = `cover fetch ${res.status}`;
+    if (res.status === 429 || res.status >= 500) {
+      await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+      continue;
+    }
+    break;
+  }
+  throw new Error(lastErr);
 }
 
 /**
