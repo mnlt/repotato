@@ -58,7 +58,10 @@ export async function GET(
   }
 
   if (rank >= 1 && rank <= 3) {
-    return svgBadge("repotato", `${MEDAL[rank - 1]} #${rank} Repo of the Day`, MEDAL_BG[rank - 1]);
+    // Self-identifying: shows owner/repo so a badge can't be passed off as
+    // another repo's achievement.
+    const who = (p.repo_full_name || "repotato").slice(0, 32);
+    return svgBadge(who, `${MEDAL[rank - 1]} #${rank} Repo of the Day`, MEDAL_BG[rank - 1]);
   }
   return svgBadge("repotato", "▲ " + formatCount(p.upvotes_count), "#57ab5a");
 }
