@@ -351,6 +351,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
             res.slug ?? draft.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
           );
           setLaunchStep("done");
+          getFeed().then(setFeed); // refresh so it shows up when they press f
         } else {
           setLaunchStep("error");
           setLaunchMsg(res.error || "Submission failed.");
@@ -506,7 +507,19 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
         }
         return;
       }
-      // submitting | done | error
+      if (launchStep === "submitting") return;
+      if (launchStep === "done") {
+        // f → list, selecting the just-launched repo wherever it ranks.
+        if (input === "f") {
+          const ri = recent.findIndex((p) => p.slug === launchSlug);
+          setListIndex(ri >= 0 ? ri : 0);
+          setMode("list");
+        } else if (key.escape || key.return) {
+          setMode("feed");
+        }
+        return;
+      }
+      // error
       if (key.escape || key.return) setMode("feed");
       return;
     }

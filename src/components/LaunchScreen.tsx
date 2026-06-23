@@ -124,7 +124,7 @@ export function LaunchScreen({
             ) : null}
 
             <Box marginTop={1}>
-              <Text color={palette.dim}>{'Find it in the feed with "f" (list view).'}</Text>
+              <Text color={palette.dim}>Press f to see your repo listed in the feed.</Text>
             </Box>
           </Box>
         ) : null}
@@ -141,7 +141,9 @@ export function LaunchScreen({
               : "enter submit · esc back"
             : step === "submitting"
               ? "…"
-              : "esc back to feed"}
+              : step === "done"
+                ? "f see it listed · esc back"
+                : "esc back to feed"}
       </Text>
     </Box>
   );
