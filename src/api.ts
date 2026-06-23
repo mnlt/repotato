@@ -8,6 +8,29 @@ const headers = {
   "content-type": "application/json",
 };
 
+export interface AppStatus {
+  min_version: string;
+  latest_version: string | null;
+  message: string | null;
+  message_level: "info" | "warn";
+}
+
+/** Remote app status: min supported version, latest version, and an optional
+ *  message to show users (MOTD). Read-only, public. */
+export async function getAppStatus(): Promise<AppStatus | null> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/app_status?id=eq.1&select=min_version,latest_version,message,message_level`,
+      { headers },
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json()) as AppStatus[];
+    return rows[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // The data seam. Reads from Supabase PostgREST with the publishable key; RLS
 // limits this to approved products. Falls back to the local fixture if the
 // request fails (offline, schema not applied yet) so the TUI never breaks.

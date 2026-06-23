@@ -3,8 +3,16 @@ import os from "node:os";
 import type { ChildProcess } from "node:child_process";
 import { Box, Text, useApp, useInput, useStdout } from "ink";
 import type { Product } from "../types.js";
-import { getFeed, registerUser, castVote, submitProduct } from "../api.js";
+import {
+  getFeed,
+  registerUser,
+  castVote,
+  submitProduct,
+  getAppStatus,
+  type AppStatus,
+} from "../api.js";
 import { getInstallId } from "../identity.js";
+import { VERSION } from "../version.js";
 import { buildCover, placeholderCover, type Cover } from "../image/render.js";
 import { detectImageCap } from "../image/detect.js";
 import { kittyDeleteAll } from "../image/kitty.js";
@@ -17,7 +25,7 @@ import {
 import { loadAuth, authenticate, type AuthState } from "../auth.js";
 import { star, unstar, getStars, isStarred, getRepo, type RepoMeta } from "../github.js";
 import { palette, computeLayout } from "../theme.js";
-import { openUrl, copyToClipboard, parseRepoFullName } from "../util.js";
+import { openUrl, copyToClipboard, parseRepoFullName, cmpVersion } from "../util.js";
 import { SITE_URL } from "../config.js";
 import { Card } from "./Card.js";
 import { AskScreen, type Msg } from "./AskScreen.js";
@@ -95,8 +103,20 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   const [launchTagline, setLaunchTagline] = useState("");
   const [launchMsg, setLaunchMsg] = useState("");
 
+  // App status: version gate + message of the day.
+  const [status, setStatus] = useState<AppStatus | null>(null);
+  const outdated = status ? cmpVersion(VERSION, status.min_version) < 0 : false;
+  const updateAvailable = status?.latest_version
+    ? cmpVersion(VERSION, status.latest_version) < 0
+    : false;
+  const noticeText = outdated
+    ? ""
+    : status?.message ||
+      (updateAvailable ? "update available — run: npx repotato@latest" : "");
+
   useEffect(() => {
     getFeed().then(setFeed);
+    getAppStatus().then(setStatus);
   }, []);
 
   // Deep link: jump to the requested product once the feed has loaded.
@@ -355,6 +375,11 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   }
 
   useInput((input, key) => {
+    // Hard version gate swallows everything but quit.
+    if (outdated) {
+      if (input === "q" || key.escape || (key.ctrl && input === "c")) exit();
+      return;
+    }
     // Auth overlay swallows input.
     if (authPrompt) {
       if (key.escape || (key.ctrl && input === "c")) {
@@ -478,6 +503,45 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
     }
   });
 
+  // ── Hard version gate ──
+  if (outdated) {
+    return (
+      <Box
+        flexDirection="column"
+        width={centered ? cols : undefined}
+        alignItems={centered ? "center" : "flex-start"}
+        paddingY={1}
+      >
+        <Box
+          width={cardWidth}
+          flexDirection="column"
+          borderStyle="bold"
+          borderColor={palette.down}
+          paddingX={2}
+          paddingY={1}
+        >
+          <Text bold color={palette.down}>
+            ⚠ Update required
+          </Text>
+          <Box marginTop={1}>
+            <Text>This version of repotato is no longer supported.</Text>
+          </Box>
+          {status?.message ? (
+            <Box marginTop={1}>
+              <Text color={palette.dim}>{status.message}</Text>
+            </Box>
+          ) : null}
+          <Box marginTop={1}>
+            <Text color={palette.upvote}>npx repotato@latest</Text>
+          </Box>
+        </Box>
+        <Box width={cardWidth} justifyContent="center">
+          <Text color={palette.dim}>q to quit</Text>
+        </Box>
+      </Box>
+    );
+  }
+
   // ── Auth overlay (modal; appears during feed voting or launch submit) ──
   if (authPrompt) {
     return (
@@ -593,6 +657,14 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       alignItems={centered ? "center" : "flex-start"}
       paddingY={1}
     >
+      {noticeText ? (
+        <Box width={cardWidth} marginBottom={0}>
+          <Text color={status?.message_level === "warn" ? palette.star : palette.accent}>
+            {"➜ " + noticeText}
+          </Text>
+        </Box>
+      ) : null}
+
       <Box width={cardWidth}>
         <Text bold color={palette.potato}>
           🥔 repotato
