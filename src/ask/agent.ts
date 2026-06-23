@@ -1,6 +1,15 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import os from "node:os";
 import type { Product } from "../types.js";
+
+/** Is the `claude` CLI available? ask/try needs it; the rest of repotato doesn't. */
+export function hasClaude(): boolean {
+  try {
+    return spawnSync("claude", ["--version"], { stdio: "ignore" }).status === 0;
+  } catch {
+    return false;
+  }
+}
 
 export interface AskContext {
   osName: string;

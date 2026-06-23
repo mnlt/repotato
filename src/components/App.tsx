@@ -21,6 +21,7 @@ import {
   runAskTurn,
   buildSystemPrompt,
   gatherContext,
+  hasClaude,
   type AskContext,
 } from "../ask/agent.js";
 import { loadAuth, authenticate, type AuthState } from "../auth.js";
@@ -36,6 +37,9 @@ import { ListScreen } from "./ListScreen.js";
 
 type Flash = { text: string; color: string } | null;
 type AuthPrompt = { code: string; url: string } | null;
+
+const NO_CLAUDE =
+  "ask/try needs Claude Code — the CLI you're already in. Get it at https://claude.com/claude-code. Everything else in repotato works without it.";
 
 /** Strip the agent's tracking markers from text shown to the user. */
 function stripMarkers(text: string): string {
@@ -111,6 +115,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   const askChild = useRef<ChildProcess | null>(null);
   const askAcc = useRef<string>("");
   const askProductId = useRef<string | null>(null);
+  const claudeOk = useRef<boolean | null>(null);
   const ctxRef = useRef<AskContext | null>(null);
   if (!ctxRef.current) ctxRef.current = gatherContext();
 
@@ -120,6 +125,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   const [launchDraft, setLaunchDraft] = useState<RepoMeta | null>(null);
   const [launchTagline, setLaunchTagline] = useState("");
   const [launchMsg, setLaunchMsg] = useState("");
+  const [launchSlug, setLaunchSlug] = useState("");
 
   // App status: version gate + message of the day.
   const [status, setStatus] = useState<AppStatus | null>(null);
@@ -341,10 +347,10 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
           setLaunchStep("error");
           setLaunchMsg(`${draft.name} is already on repotato — a repo can only be posted once.`);
         } else if (res.ok) {
-          setLaunchStep("done");
-          setLaunchMsg(
-            `🥔 ${draft.name} is live on repotato!\nShare it: ${SITE_URL}/p/${res.slug ?? draft.name}`,
+          setLaunchSlug(
+            res.slug ?? draft.full_name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
           );
+          setLaunchStep("done");
         } else {
           setLaunchStep("error");
           setLaunchMsg(res.error || "Submission failed.");
@@ -357,11 +363,12 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
 
   // ── Ask ───────────────────────────────────────────────────────────────────
   function openAsk(product: Product) {
+    if (claudeOk.current === null) claudeOk.current = hasClaude();
     askSession.current = null;
     askAcc.current = "";
     askProductId.current = product.id;
     askSystem.current = buildSystemPrompt(product, ctxRef.current!);
-    setMessages([]);
+    setMessages(claudeOk.current ? [] : [{ role: "assistant", text: NO_CLAUDE }]);
     setAskInput("");
     setStreaming(false);
     setStreamingText("");
@@ -370,6 +377,14 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   }
 
   function sendAsk(text: string) {
+    if (claudeOk.current === false) {
+      setMessages((m) => [
+        ...m,
+        { role: "user", text },
+        { role: "assistant", text: NO_CLAUDE },
+      ]);
+      return;
+    }
     setMessages((m) => [...m, { role: "user", text }]);
     setStreaming(true);
     setStreamingText("");
@@ -701,6 +716,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
             !!authRef.current && authRef.current.login === launchDraft?.owner_login
           }
           message={launchMsg}
+          slug={launchSlug}
           posterLogin={authRef.current?.login ?? null}
         />
       </Box>

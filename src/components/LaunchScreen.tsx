@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Text } from "ink";
 import { palette } from "../theme.js";
+import { SITE_URL } from "../config.js";
 import { formatCount } from "../util.js";
 import type { RepoMeta } from "../github.js";
 
@@ -14,6 +15,7 @@ export interface LaunchScreenProps {
   tagline: string;
   editable: boolean;
   message: string;
+  slug: string;
   posterLogin: string | null;
 }
 
@@ -25,6 +27,7 @@ export function LaunchScreen({
   tagline,
   editable,
   message,
+  slug,
   posterLogin,
 }: LaunchScreenProps) {
   const inner = width - 6; // border (2) + paddingX 2 each side (4)
@@ -96,7 +99,26 @@ export function LaunchScreen({
 
         {step === "submitting" ? <Text color={palette.dim}>Submitting…</Text> : null}
 
-        {step === "done" ? <Text color={palette.upvote}>{"✅ " + message}</Text> : null}
+        {step === "done" ? (
+          <Box flexDirection="column">
+            <Text bold color={palette.upvote}>
+              {`🥔 ${draft?.name ?? "Your repo"} is live on repotato!`}
+            </Text>
+            <Box marginTop={1} flexDirection="column">
+              <Text>
+                <Text color={palette.dim}>{"Share   "}</Text>
+                <Text color={palette.accent}>{`${SITE_URL}/p/${slug}`}</Text>
+              </Text>
+              <Text>
+                <Text color={palette.dim}>{"Open    "}</Text>
+                <Text color={palette.upvote}>{`npx repotato open ${slug}`}</Text>
+              </Text>
+            </Box>
+            <Box marginTop={1}>
+              <Text color={palette.dim}>{'Find it in the feed with "f" (list view).'}</Text>
+            </Box>
+          </Box>
+        ) : null}
 
         {step === "error" ? <Text color={palette.down}>{"⚠ " + message}</Text> : null}
       </Box>
