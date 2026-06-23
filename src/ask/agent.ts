@@ -61,8 +61,6 @@ export function runAskTurn(opts: {
   const args = [
     "-p",
     prompt,
-    "--model",
-    process.env.REPOTATO_ASK_MODEL || "haiku",
     "--output-format",
     "stream-json",
     "--include-partial-messages",
@@ -77,6 +75,12 @@ export function runAskTurn(opts: {
     "--allowedTools",
     "Bash,Read,Write,Edit,WebFetch,WebSearch",
   ];
+  // No --model by default: use the user's configured Claude Code model (their
+  // best agent — this runs installs on their machine). Override only if asked.
+  if (process.env.REPOTATO_ASK_MODEL) {
+    args.push("--model", process.env.REPOTATO_ASK_MODEL);
+  }
+
   if (sessionId) args.push("--resume", sessionId);
   else args.push("--append-system-prompt", systemPrompt);
 
