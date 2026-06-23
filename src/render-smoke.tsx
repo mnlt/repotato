@@ -16,6 +16,7 @@ const { lastFrame } = render(
     upvotes={products[1].upvotes_count}
     stars={products[1].stars_cached}
     voted={false}
+    dayRank={1}
   />,
 );
 console.log(lastFrame());

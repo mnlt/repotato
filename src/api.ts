@@ -101,6 +101,22 @@ export async function submitProduct(
   }
 }
 
+/** A repo's place among repos launched the same day, by votes that day (1-3),
+ *  or 0 if unranked. Computed by the day_rank() SQL function. */
+export async function getDayRank(slug: string): Promise<number> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/day_rank`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ p_slug: slug }),
+    });
+    if (!res.ok) return 0;
+    return Number(await res.json()) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 /** Record a usage event (tried / uninstalled). Keyed by install (+ github when
  *  signed in). Fire-and-forget; stats only. */
 export async function trackEvent(opts: {

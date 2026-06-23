@@ -10,6 +10,7 @@ import {
   submitProduct,
   getAppStatus,
   trackEvent,
+  getDayRank,
   type AppStatus,
 } from "../api.js";
 import { getInstallId, hasWelcomed, markWelcomed } from "../identity.js";
@@ -91,6 +92,8 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   const [votes, setVotes] = useState<Record<string, boolean>>({});
   const [serverCounts, setServerCounts] = useState<Record<string, number>>({});
   const [liveStars, setLiveStars] = useState<Record<string, number>>({});
+  const [dayRanks, setDayRanks] = useState<Record<string, number>>({});
+  const dayFetched = useRef<Set<string>>(new Set());
   const [authPrompt, setAuthPrompt] = useState<AuthPrompt>(null);
   const authRef = useRef<AuthState | null>(loadAuth());
   const authCancel = useRef<(() => void) | null>(null);
@@ -180,6 +183,10 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       isStarred(token, prod.repo_full_name).then((starred) => {
         if (starred) setVotes((v) => (v[prod.id] ? v : { ...v, [prod.id]: true }));
       });
+    }
+    if (!dayFetched.current.has(prod.id)) {
+      dayFetched.current.add(prod.id);
+      getDayRank(prod.slug).then((r) => setDayRanks((m) => ({ ...m, [prod.id]: r })));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feed, index]);
@@ -822,6 +829,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
         upvotes={upvotes}
         stars={stars}
         voted={voted}
+        dayRank={dayRanks[product.id] ?? 0}
       />
 
       <Box width={cardWidth} justifyContent="center">

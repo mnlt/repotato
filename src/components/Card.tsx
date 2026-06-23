@@ -4,6 +4,9 @@ import type { Product } from "../types.js";
 import { palette, PAD_X } from "../theme.js";
 import { formatCount } from "../util.js";
 
+const MEDALS = ["🥇", "🥈", "🥉"];
+const MEDAL_COLORS = [palette.star, "#c0c0c0", "#cd7f32"];
+
 /** Center a string within a fixed width with spaces. */
 function center(s: string, w: number): string {
   const pad = Math.max(0, w - s.length);
@@ -36,9 +39,10 @@ export interface CardProps {
   upvotes: number;
   stars: number;
   voted: boolean;
+  dayRank: number;
 }
 
-export function Card({ product, coverLines, width, upvotes, stars, voted }: CardProps) {
+export function Card({ product, coverLines, width, upvotes, stars, voted, dayRank }: CardProps) {
   const inner = width - 2 - PAD_X * 2; // border + horizontal padding
 
   return (
@@ -58,6 +62,15 @@ export function Card({ product, coverLines, width, upvotes, stars, voted }: Card
           ))}
         </Box>
       </Box>
+
+      {/* Repo of the Day ribbon (only when top-3 of its launch day) */}
+      {dayRank >= 1 && dayRank <= 3 ? (
+        <Box marginTop={1}>
+          <Text bold color={MEDAL_COLORS[dayRank - 1]}>
+            {`${MEDALS[dayRank - 1]} #${dayRank} Repo of the Day`}
+          </Text>
+        </Box>
+      ) : null}
 
       {/* Title row: name + stars (left)  ·  upvote button (right) */}
       <Box width={inner} justifyContent="space-between" marginTop={1}>
