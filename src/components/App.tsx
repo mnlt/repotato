@@ -11,7 +11,7 @@ import {
   getAppStatus,
   type AppStatus,
 } from "../api.js";
-import { getInstallId } from "../identity.js";
+import { getInstallId, hasWelcomed, markWelcomed } from "../identity.js";
 import { VERSION } from "../version.js";
 import { buildCover, placeholderCover, type Cover } from "../image/render.js";
 import { detectImageCap } from "../image/detect.js";
@@ -30,6 +30,7 @@ import { SITE_URL } from "../config.js";
 import { Card } from "./Card.js";
 import { AskScreen, type Msg } from "./AskScreen.js";
 import { LaunchScreen, type LaunchStep } from "./LaunchScreen.js";
+import { WelcomeScreen } from "./WelcomeScreen.js";
 
 type Flash = { text: string; color: string } | null;
 type AuthPrompt = { code: string; url: string } | null;
@@ -81,8 +82,12 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   const hydratedVotes = useRef<Set<string>>(new Set());
 
   // Ask mode.
-  const [mode, setMode] = useState<"feed" | "ask" | "launch">(
-    process.env.REPOTATO_MODE === "launch" ? "launch" : "feed",
+  const [mode, setMode] = useState<"feed" | "ask" | "launch" | "welcome">(
+    process.env.REPOTATO_MODE === "launch"
+      ? "launch"
+      : hasWelcomed()
+        ? "feed"
+        : "welcome",
   );
   const [messages, setMessages] = useState<Msg[]>([]);
   const [askInput, setAskInput] = useState("");
@@ -380,6 +385,21 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       if (input === "q" || key.escape || (key.ctrl && input === "c")) exit();
       return;
     }
+    // Welcome screen: Enter to start.
+    if (mode === "welcome") {
+      if (key.ctrl && input === "c") {
+        exit();
+        return;
+      }
+      if (key.return) {
+        markWelcomed();
+        setMode("feed");
+      } else if (input === "q" || key.escape) {
+        exit();
+      }
+      return;
+    }
+
     // Auth overlay swallows input.
     if (authPrompt) {
       if (key.escape || (key.ctrl && input === "c")) {
@@ -537,6 +557,24 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
         </Box>
         <Box width={cardWidth} justifyContent="center">
           <Text color={palette.dim}>q to quit</Text>
+        </Box>
+      </Box>
+    );
+  }
+
+  // ── Welcome screen (first run) ──
+  if (mode === "welcome") {
+    return (
+      <Box
+        flexDirection="column"
+        width={centered ? cols : undefined}
+        alignItems={centered ? "center" : "flex-start"}
+        paddingY={1}
+      >
+        <WelcomeScreen width={cardWidth} />
+        <Box width={cardWidth} justifyContent="center" marginTop={0}>
+          <Text color={palette.upvote}>Press Enter to start</Text>
+          <Text color={palette.dim}>{"   ·   q quit"}</Text>
         </Box>
       </Box>
     );
