@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "dist",
+    "web",
+    "src/**/*smoke*",
+    "src/ask/ask-test.ts"
+  ]
+}

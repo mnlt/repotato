@@ -17,7 +17,8 @@ import {
 import { loadAuth, authenticate, type AuthState } from "../auth.js";
 import { star, unstar, getStars, isStarred, getRepo, type RepoMeta } from "../github.js";
 import { palette, computeLayout } from "../theme.js";
-import { openUrl, parseRepoFullName } from "../util.js";
+import { openUrl, copyToClipboard, parseRepoFullName } from "../util.js";
+import { SITE_URL } from "../config.js";
 import { Card } from "./Card.js";
 import { AskScreen, type Msg } from "./AskScreen.js";
 import { LaunchScreen, type LaunchStep } from "./LaunchScreen.js";
@@ -42,7 +43,7 @@ function useTerminalSize() {
   return size;
 }
 
-export default function App() {
+export default function App({ initialSlug }: { initialSlug?: string }) {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const { cols, rows } = useTerminalSize();
@@ -97,6 +98,15 @@ export default function App() {
   useEffect(() => {
     getFeed().then(setFeed);
   }, []);
+
+  // Deep link: jump to the requested product once the feed has loaded.
+  const deepLinked = useRef(false);
+  useEffect(() => {
+    if (!feed || !initialSlug || deepLinked.current) return;
+    deepLinked.current = true;
+    const i = feed.findIndex((p) => p.slug === initialSlug);
+    if (i >= 0) setIndex(i);
+  }, [feed, initialSlug]);
 
   // For the current product: fetch the live star count, and hydrate the user's
   // prior vote from whether they've already starred the repo (the source of
@@ -460,6 +470,9 @@ export default function App() {
       showFlash(`Opening ${product.name}'s demo in your browser…`, palette.accent);
     } else if (input === "a") {
       openAsk(product);
+    } else if (input === "s") {
+      copyToClipboard(`${SITE_URL}/p/${product.slug}`);
+      showFlash("🔗 Link copied — share it!", palette.accent);
     } else if (input === "l" || input === "L") {
       enterLaunch();
     }
@@ -599,7 +612,7 @@ export default function App() {
         <Text color={flash ? flash.color : palette.dim}>
           {flash
             ? flash.text
-            : "←/→ nav   ↑ upvote   v demo   a ask/try   L launch   q quit"}
+            : "←/→ nav  ↑ upvote  v demo  a ask  s share  L launch  q quit"}
         </Text>
       </Box>
     </Box>

@@ -19,6 +19,24 @@ export function parseRepoFullName(input: string): string | null {
   return fn && /^[^/\s]+\/[^/\s]+$/.test(fn) ? fn : null;
 }
 
+/** Copy text to the system clipboard, cross-platform (best-effort). */
+export function copyToClipboard(text: string): void {
+  const cmd =
+    process.platform === "darwin"
+      ? "pbcopy"
+      : process.platform === "win32"
+        ? "clip"
+        : "xclip";
+  const args = process.platform === "linux" ? ["-selection", "clipboard"] : [];
+  try {
+    const p = spawn(cmd, args, { stdio: ["pipe", "ignore", "ignore"] });
+    p.stdin?.write(text);
+    p.stdin?.end();
+  } catch {
+    /* clipboard not available — non-fatal */
+  }
+}
+
 /** Open a URL in the user's default app/browser, cross-platform. */
 export function openUrl(url: string): void {
   const cmd =

@@ -1,18 +1,47 @@
 {
   "name": "repotato",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Discover, try and upvote awesome GitHub repos — from your terminal. Upvote = star.",
+  "keywords": [
+    "cli",
+    "tui",
+    "github",
+    "product-hunt",
+    "terminal",
+    "ink",
+    "claude",
+    "repos",
+    "discovery",
+    "stars"
+  ],
+  "homepage": "https://github.com/mnlt/repotato",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mnlt/repotato.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mnlt/repotato/issues"
+  },
+  "license": "MIT",
+  "author": "Manuel (mnlt)",
   "type": "module",
-  "description": "Product Hunt for GitHub repos, from your terminal.",
   "bin": {
     "repotato": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
     "dev": "tsx src/index.tsx",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "smoke": "tsx src/smoke.ts"
+    "smoke": "tsx src/smoke.ts",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "ink": "^6.0.0",
@@ -25,5 +54,8 @@
     "ink-testing-library": "^4.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
