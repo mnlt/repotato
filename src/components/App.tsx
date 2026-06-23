@@ -343,7 +343,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
         } else if (res.ok) {
           setLaunchStep("done");
           setLaunchMsg(
-            `Submitted ${draft.name} — pending review.\nIt'll be shareable at /p/${res.slug ?? draft.name} once the web is live.`,
+            `🥔 ${draft.name} is live on repotato!\nShare it: ${SITE_URL}/p/${res.slug ?? draft.name}`,
           );
         } else {
           setLaunchStep("error");

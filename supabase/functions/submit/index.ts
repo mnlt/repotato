@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
       media_type: "image",
       tags: Array.isArray(repo.topics) ? repo.topics.slice(0, 5) : [],
       stars_cached: repo.stargazers_count ?? 0,
-      status: "pending",
+      status: "approved",
     };
 
     const { error } = await supa.from("products").insert(product);
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
         return json({ status: "exists", slug });
       return json({ error: error.message }, 500);
     }
-    return json({ status: "pending", slug });
+    return json({ status: "approved", slug });
   } catch (e) {
     return json({ error: String(e) }, 500);
   }
