@@ -5,7 +5,7 @@ export const SUPABASE_URL = "https://sktbbdgcubnedpsvzxxp.supabase.co";
 export const SUPABASE_ANON_KEY = "sb_publishable_lbDiWL5tuQXQ2UUB4DEknw_9w3gfv7T";
 
 // The web showcase base URL — used to build shareable product links.
-export const SITE_URL = process.env.REPOTATO_SITE_URL ?? "https://repotato.vercel.app";
+export const SITE_URL = process.env.REPOTATO_SITE_URL ?? "https://repotato.sh";
 
 // GitHub OAuth App Client ID for the device flow (used to star repos on upvote).
 // NOT a secret — device flow is built for public clients (no client secret).
