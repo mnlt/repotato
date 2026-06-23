@@ -148,6 +148,45 @@ $$;
 grant execute on function
   public.track_event(uuid, bigint, uuid, text) to anon, authenticated;
 
+-- ── day_rank: a repo's place among repos launched the same UTC day, by votes ──
+-- received THAT day. Frozen once the day closes. SECURITY DEFINER so the badge
+-- can use it without exposing the (private) votes table. Returns 0 if unranked.
+create or replace function public.day_rank(p_slug text)
+returns integer
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  with me as (
+    select id, created_at from public.products
+    where slug = p_slug and status = 'approved'
+  ),
+  bounds as (
+    select date_trunc('day', (select created_at from me) at time zone 'utc')
+             at time zone 'utc' as day_start
+  ),
+  cohort as (
+    select p.id, p.created_at,
+      (select count(*) from public.votes v
+        where v.product_id = p.id
+          and v.created_at >= (select day_start from bounds)
+          and v.created_at <  (select day_start from bounds) + interval '1 day'
+      ) as day_votes
+    from public.products p
+    where p.status = 'approved'
+      and (p.created_at at time zone 'utc')::date
+          = ((select day_start from bounds) at time zone 'utc')::date
+  ),
+  ranked as (
+    select id, row_number() over (order by day_votes desc, created_at asc) as rnk
+    from cohort
+  )
+  select coalesce((select rnk from ranked where id = (select id from me)), 0)::integer;
+$$;
+
+grant execute on function public.day_rank(text) to anon, authenticated;
+
 -- ── seed (the walking-skeleton catalogue) ───────────────────────────────────
 insert into public.products
   (slug, name, tagline, description, repo_full_name, built_by_login,

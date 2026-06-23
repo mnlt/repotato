@@ -38,22 +38,21 @@ export async function GET(
   const p = await getProduct(slug);
   if (!p) return svgBadge("repotato", "▲ 0", "#57ab5a");
 
-  // The launch day in UTC.
-  const d = new Date(p.created_at ?? Date.now());
-  const start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-  const end = new Date(start.getTime() + 86_400_000);
-
+  // Rank within the launch day's cohort, by votes received THAT day (frozen
+  // once the day closes). Computed server-side (votes are private).
   let rank = 0;
   try {
-    const url =
-      `${SUPABASE_URL}/rest/v1/products?status=eq.approved` +
-      `&created_at=gte.${start.toISOString()}&created_at=lt.${end.toISOString()}` +
-      `&order=upvotes_count.desc,created_at.asc&select=slug`;
-    const rows = (await fetch(url, {
-      headers: { apikey: SUPABASE_ANON_KEY, authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/day_rank`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ p_slug: slug }),
       next: { revalidate: 300 },
-    }).then((r) => r.json())) as { slug: string }[];
-    rank = rows.findIndex((r) => r.slug === slug) + 1;
+    });
+    rank = Number(await res.json()) || 0;
   } catch {
     rank = 0;
   }
