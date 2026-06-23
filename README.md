@@ -1,36 +1,38 @@
 # 🥔 repotato
 
-Discover, try and upvote awesome GitHub repos — **from your terminal**.
+Discover, try and upvote awesome GitHub repos — from your terminal.
 
-A Product-Hunt-style feed of GitHub repos that lives in your terminal, for the
-downtime while your coding agent works. One product at a time, GameBoy-ish card.
-**An upvote is a real GitHub star.** Ask its built-in assistant to explain,
-install & try, or uninstall a repo cleanly — powered by your local Claude.
+A feed of GitHub repos you browse in your terminal, one at a time.
+**An upvote is a real GitHub star.**
 
-> Early work in progress.
-
-## Run it
+## Install
 
 ```bash
-npm install
-npm run dev
+npx repotato
 ```
 
-- `←/→` navigate · `↑` upvote (= star) · `↓` remove · `v` view demo · `a` ask/try · `L` launch · `q` quit
-- First upvote signs you in to GitHub via device flow (token stored in `~/.repotato`).
+## If you're discovering repos
 
-There's also a `/repotato` Claude Code slash command that opens the feed in a new
-terminal window, and `/repotato launch` to submit a product.
+- Browse the feed: `npx repotato`
+- **Upvote** a repo with `↑` — it stars the repo on GitHub.
+- **Ask / try**: press `a` to ask repotato's assistant to explain a repo, install
+  and let you try it, or uninstall it cleanly — powered by your local Claude.
+- Open a specific repo: `npx repotato open <slug>`
 
-## How it fits together
+## If you made a repo
 
-- **CLI** (`src/`) — the Ink TUI feed, vote, ask/try and launch flows.
-- **`supabase/`** — schema + Edge Functions (vote / submit) on Supabase.
-- **`web/`** — the read-only showcase (Next.js, deploys to Vercel). The product
-  lives in the terminal; the web is just the window + shareable pages + README badge.
+- **Launch it**: run `npx repotato` and press `L` (or `/repotato launch`).
+- Every upvote it gets is a real ⭐ on your repo.
+- Add a live badge to your README to show your repotato upvotes.
 
-## Notes
+## Keys
 
-- The Supabase publishable key and GitHub OAuth Client ID in the source are
-  **public by design** (RLS protects the data; device flow needs no secret).
-- Upvote = star. There is no downvote — `↓` just removes your upvote.
+`←/→` navigate · `↑` upvote · `v` view demo · `a` ask/try · `s` share · `L` launch · `q` quit
+
+## How it's built
+
+- **CLI** — the terminal app (Ink).
+- **`supabase/`** — database + functions (votes, submissions).
+- **`web/`** — a read-only showcase + shareable pages. The product lives in the terminal.
+
+MIT.
