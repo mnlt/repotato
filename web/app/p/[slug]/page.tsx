@@ -50,12 +50,7 @@ export default async function ProductPage({
       />
 
       <h1 className="ptitle">{p.name}</h1>
-      <div className="psub">
-        {"by @" + p.built_by_login}
-        {p.posted_by_login && p.posted_by_login !== p.built_by_login
-          ? `  ·  posted by @${p.posted_by_login}`
-          : ""}
-      </div>
+      <div className="psub">{"by @" + p.built_by_login}</div>
 
       <div className="row">
         <span className="pill">{"▲ " + formatCount(p.upvotes_count) + " upvotes"}</span>
