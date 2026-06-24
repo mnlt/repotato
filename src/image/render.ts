@@ -81,6 +81,30 @@ export function placeholderCover(cols: number, rows: number): string[] {
 }
 
 /**
+ * A sober "cover" band for terminals without crisp graphics (Terminal.app,
+ * iTerm2, VS Code, …). A soft vertical potato gradient — reads as a header, not
+ * a low-res photo. Short on purpose, so the card stays compact and sharp.
+ */
+export function bandCover(cols: number, rows = 2): string[] {
+  const steps = rows * 2; // two vertical pixels per half-block row
+  const c0 = [38, 30, 8]; // dark amber (top)
+  const c1 = [120, 95, 24]; // potato (bottom)
+  const px = (i: number) =>
+    c0.map((a, k) => Math.round(a + (c1[k] - a) * (i / (steps - 1))));
+  const lines: string[] = [];
+  for (let r = 0; r < rows; r++) {
+    const t = px(2 * r);
+    const b = px(2 * r + 1);
+    lines.push(
+      `${ESC}[38;2;${t[0]};${t[1]};${t[2]}m${ESC}[48;2;${b[0]};${b[1]};${b[2]}m` +
+        UPPER_HALF.repeat(cols) +
+        RESET,
+    );
+  }
+  return lines;
+}
+
+/**
  * Build a cover for the given terminal capability. kitty (Ghostty/kitty/WezTerm)
  * gets a crisp PNG via Unicode placeholders; everything else (incl. iTerm2,
  * whose inline protocol desyncs Ink) falls back to half-blocks.

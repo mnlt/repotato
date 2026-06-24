@@ -15,7 +15,7 @@ import {
 } from "../api.js";
 import { getInstallId, hasWelcomed, markWelcomed } from "../identity.js";
 import { VERSION } from "../version.js";
-import { buildCover, placeholderCover, type Cover } from "../image/render.js";
+import { buildCover, placeholderCover, bandCover, type Cover } from "../image/render.js";
 import { detectImageCap } from "../image/detect.js";
 import { kittyDeleteAll } from "../image/kitty.js";
 import {
@@ -244,6 +244,9 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
 
   useEffect(() => {
     if (!feed) return;
+    // Only kitty-class terminals get the crisp photo cover. Everywhere else uses
+    // a clean band (rendered inline, no fetch) — see coverLines below.
+    if (cap !== "kitty") return;
     const want = [index, index + 1, index - 1]
       .map((i) => (i + feed.length) % feed.length)
       .filter((i, pos, arr) => arr.indexOf(i) === pos);
@@ -824,7 +827,12 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
   // ── Feed ──
   const coverKey = `${product.id}:${coverCols}x${coverRows}`;
   const cover = covers[coverKey];
-  const coverLines = cover?.lines ?? placeholderCover(coverCols, coverRows);
+  // Crisp photo on kitty/Ghostty/WezTerm; a clean band on every other terminal
+  // (where a half-block photo would just look pixelated).
+  const coverLines =
+    cap === "kitty"
+      ? (cover?.lines ?? placeholderCover(coverCols, coverRows))
+      : bandCover(coverCols);
   const voted = !!votes[product.id];
   // Counts are server truth (recomputed from the votes table). Never add a
   // client-side optimistic +1 — the base already includes your own vote, which
