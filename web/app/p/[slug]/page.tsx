@@ -82,7 +82,10 @@ export default async function ProductPage({
       <div className="cta">
         <h3>Add the badge to your README</h3>
         <CopyCommand text={badgeMd} />
-        <div className="note">Shows your live repotato upvote count.</div>
+        <div className="note">
+          Shows your repo name + live upvotes, and upgrades itself to a
+          🥇 Repo&nbsp;of&nbsp;the&nbsp;Day medal on the day you place top-3. One badge — paste it once.
+        </div>
       </div>
 
       <p className="footer">🥔 repotato</p>
