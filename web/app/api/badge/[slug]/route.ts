@@ -4,7 +4,9 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/config";
 export const revalidate = 300;
 
 const MEDAL = ["🥇", "🥈", "🥉"];
-const MEDAL_BG = ["#d4a017", "#9aa0a6", "#cd7f32"]; // gold / silver / bronze
+// Darkened gold / silver / bronze: the medal emoji already signals the metal,
+// so these stay dark enough for the emoji + white text to read clearly on top.
+const MEDAL_BG = ["#876a00", "#5c636e", "#7a4a26"];
 const GREEN = "#57ab5a";
 
 function svgBadge(label: string, value: string, valueBg: string): Response {
