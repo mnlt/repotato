@@ -5,11 +5,11 @@ export const revalidate = 300;
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 const MEDAL_BG = ["#876a00", "#5c636e", "#7a4a26"]; // darkened gold / silver / bronze
-const BRAND_BG = "#57606a"; // "repotato"
+const BRAND_BG = "#444"; // "repotato"
 const NAME_BG = "#30363d"; // owner/repo (near-black slate, clearly distinct from silver)
 const GREEN = "#2da44e"; // upvotes
 
-type Seg = { text: string; bg: string; bold?: boolean };
+type Seg = { text: string; bg: string };
 
 function textWidth(text: string): number {
   const emojis = (text.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu) || []).length;
@@ -24,9 +24,7 @@ function svgBadge(segs: Seg[]): Response {
   for (const s of segs) {
     const w = Math.round(textWidth(s.text) + 18);
     rects.push(`<rect x="${x}" width="${w}" height="20" fill="${s.bg}"/>`);
-    texts.push(
-      `<text x="${x + w / 2}" y="14"${s.bold ? ' font-weight="bold"' : ""}>${s.text}</text>`,
-    );
+    texts.push(`<text x="${x + w / 2}" y="14">${s.text}</text>`);
     x += w;
   }
   const W = x;
@@ -44,7 +42,7 @@ function svgBadge(segs: Seg[]): Response {
   });
 }
 
-/** The one repotato badge. Blocks: repotato | owner/repo | [Repo of the Day] | ▲ N.
+/** The one repotato badge. Blocks: repotato | [Repo of the Day] | name | ▲ N.
  *  The medal block only appears on the day the repo places top-3 in its launch-day
  *  cohort (by votes received that day, frozen once the day closes). The upvote
  *  count is always its own green block. Embed it once — it updates itself. */
@@ -54,12 +52,11 @@ export async function GET(
 ) {
   const { slug } = await params;
   const p = await getProduct(slug);
-  if (!p) return svgBadge([{ text: "repotato", bg: BRAND_BG }, { text: "▲ 0", bg: GREEN, bold: true }]);
+  if (!p) return svgBadge([{ text: "repotato", bg: BRAND_BG }, { text: "▲ 0", bg: GREEN }]);
 
-  // owner/repo — self-identifying, so a badge can't be passed off as another
-  // repo's achievement.
-  const who = (p.repo_full_name || slug).slice(0, 40);
-  const votes: Seg = { text: `▲ ${formatCount(p.upvotes_count)}`, bg: GREEN, bold: true };
+  // Repo name only (no owner).
+  const who = ((p.repo_full_name || slug).split("/").pop() || slug).slice(0, 32);
+  const votes: Seg = { text: `▲ ${formatCount(p.upvotes_count)}`, bg: GREEN };
 
   let rank = 0;
   try {
@@ -78,16 +75,15 @@ export async function GET(
     rank = 0;
   }
 
-  const base: Seg[] = [
-    { text: "repotato", bg: BRAND_BG },
-    { text: who, bg: NAME_BG },
-  ];
+  const brand: Seg = { text: "repotato", bg: BRAND_BG };
+  const name: Seg = { text: who, bg: NAME_BG };
   if (rank >= 1 && rank <= 3) {
     return svgBadge([
-      ...base,
-      { text: `${MEDAL[rank - 1]} #${rank} Repo of the Day`, bg: MEDAL_BG[rank - 1], bold: true },
+      brand,
+      { text: `${MEDAL[rank - 1]} #${rank} Repo of the Day`, bg: MEDAL_BG[rank - 1] },
+      name,
       votes,
     ]);
   }
-  return svgBadge([...base, votes]);
+  return svgBadge([brand, name, votes]);
 }
