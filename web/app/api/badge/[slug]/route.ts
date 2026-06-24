@@ -66,7 +66,11 @@ export async function GET(
   }
 
   if (rank >= 1 && rank <= 3) {
-    return svgBadge("repotato", `${who}  ${MEDAL[rank - 1]} #${rank} Repo of the Day`, MEDAL_BG[rank - 1]);
+    return svgBadge(
+      "repotato",
+      `${who}  ${MEDAL[rank - 1]} #${rank} Repo of the Day  ▲ ${formatCount(p.upvotes_count)}`,
+      MEDAL_BG[rank - 1],
+    );
   }
   return svgBadge("repotato", `${who}  ▲ ${formatCount(p.upvotes_count)}`, GREEN);
 }
