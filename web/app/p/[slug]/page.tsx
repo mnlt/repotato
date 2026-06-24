@@ -42,7 +42,12 @@ export default async function ProductPage({
   return (
     <main className="wrap">
       <a className="back" href="/">{"← all products"}</a>
-      <img className="hero" src={p.cover_url} alt={p.name} style={{ marginTop: 16 }} />
+      <div
+        className="hero"
+        role="img"
+        aria-label={p.name}
+        style={{ marginTop: 16, backgroundImage: `url(${p.cover_url})` }}
+      />
 
       <h1 className="ptitle">{p.name}</h1>
       <div className="psub">

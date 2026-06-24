@@ -78,12 +78,14 @@ a { color: inherit; text-decoration: none; }
 
 /* Product page */
 .hero {
+  display: block;
   width: 100%;
   aspect-ratio: 2 / 1;
-  object-fit: cover;
   border-radius: 12px;
   border: 1px solid var(--border);
-  background: var(--panel);
+  background-color: var(--panel);
+  background-size: cover;
+  background-position: center;
 }
 .ptitle { font-size: 26px; font-weight: 700; color: var(--potato); margin: 20px 0 4px; }
 .psub { color: var(--dim); margin-bottom: 16px; }
