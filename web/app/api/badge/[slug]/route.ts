@@ -8,6 +8,7 @@ const MEDAL_BG = ["#876a00", "#5c636e", "#7a4a26"]; // darkened gold / silver / 
 const BRAND_BG = "#444"; // "repotato"
 const NAME_BG = "#30363d"; // owner/repo (near-black slate, clearly distinct from silver)
 const GREEN = "#2da44e"; // upvotes
+const LIVE_BG = "#bc4c00"; // launch day still open
 
 type Seg = { text: string; bg: string };
 
@@ -42,10 +43,11 @@ function svgBadge(segs: Seg[]): Response {
   });
 }
 
-/** The one repotato badge. Blocks: repotato | [Repo of the Day] | name | ▲ N.
- *  The medal block only appears on the day the repo places top-3 in its launch-day
- *  cohort (by votes received that day, frozen once the day closes). The upvote
- *  count is always its own green block. Embed it once — it updates itself. */
+/** The one repotato badge. Blocks: repotato | [live today | medal] | name | ▲ N.
+ *  On the launch day (UTC) it shows "live today" — standings aren't final yet.
+ *  Once the day closes it freezes: top-3 keep a 🥇/🥈/🥉 Repo of the Day medal,
+ *  everyone else falls back to the plain badge. The upvote count is always its
+ *  own green block. Embed it once — it updates itself. */
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ slug: string }> },
@@ -56,8 +58,26 @@ export async function GET(
 
   // Repo name only (no owner).
   const who = ((p.repo_full_name || slug).split("/").pop() || slug).slice(0, 32);
+  const brand: Seg = { text: "repotato", bg: BRAND_BG };
+  const name: Seg = { text: who, bg: NAME_BG };
   const votes: Seg = { text: `▲ ${formatCount(p.upvotes_count)}`, bg: GREEN };
 
+  // The launch day's ranking is only meaningful once the day has CLOSED (UTC).
+  // While it's still open, the standings are live and can change — so we never
+  // claim a medal mid-day. We show a "live today" block instead.
+  const created = p.created_at ? new Date(p.created_at) : null;
+  const now = new Date();
+  const dayOpen =
+    !!created &&
+    created.getUTCFullYear() === now.getUTCFullYear() &&
+    created.getUTCMonth() === now.getUTCMonth() &&
+    created.getUTCDate() === now.getUTCDate();
+
+  if (dayOpen) {
+    return svgBadge([brand, { text: "live today", bg: LIVE_BG }, name, votes]);
+  }
+
+  // Day closed: award the frozen medal to the top 3, otherwise the plain badge.
   let rank = 0;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/day_rank`, {
@@ -75,8 +95,6 @@ export async function GET(
     rank = 0;
   }
 
-  const brand: Seg = { text: "repotato", bg: BRAND_BG };
-  const name: Seg = { text: who, bg: NAME_BG };
   if (rank >= 1 && rank <= 3) {
     return svgBadge([
       brand,
