@@ -1,5 +1,7 @@
 # 🥔 repotato
 
+[![repotato](https://repotato.sh/api/badge/mnlt-repotato)](https://repotato.sh/p/mnlt-repotato)
+
 Share, discover, try out, and support amazing GitHub repositories - all from your terminal while Claude works.
 
 A daily feed of GitHub repos you browse in your terminal, one at a time.
