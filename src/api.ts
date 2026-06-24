@@ -38,7 +38,7 @@ export async function getFeed(): Promise<Product[]> {
   try {
     const url =
       `${SUPABASE_URL}/rest/v1/products` +
-      `?status=eq.approved&order=upvotes_count.desc&select=*`;
+      `?status=eq.approved&order=upvotes_count.desc,created_at.desc&select=*`;
     const res = await fetch(url, { headers });
     if (!res.ok) throw new Error(`supabase ${res.status}`);
     const rows = (await res.json()) as Product[];

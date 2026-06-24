@@ -34,7 +34,7 @@ import { Card } from "./Card.js";
 import { AskScreen, type Msg } from "./AskScreen.js";
 import { LaunchScreen, type LaunchStep } from "./LaunchScreen.js";
 import { WelcomeScreen } from "./WelcomeScreen.js";
-import { ListScreen } from "./ListScreen.js";
+import { ListScreen, type ListItem } from "./ListScreen.js";
 
 type Flash = { text: string; color: string } | null;
 type AuthPrompt = { code: string; url: string } | null;
@@ -141,8 +141,8 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
     : status?.message ||
       (updateAvailable ? "update available — run: npx repotato@latest" : "");
 
-  // List view: products launched today or yesterday, in feed (upvote) order.
-  const recent = useMemo<Product[]>(() => {
+  // Products launched today or yesterday (unsorted) — the daily-leaderboard pool.
+  const recentRaw = useMemo<Product[]>(() => {
     if (!feed) return [];
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -152,10 +152,41 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
     );
   }, [feed]);
 
+  // The list IS the daily leaderboard: grouped into Today / Yesterday, and within
+  // each day ordered by votes received THAT day (day_rank) — so the #1 of each
+  // day is its 🥇, matching the medals. The cumulative ▲ no longer drives order.
+  const recent = useMemo<ListItem[]>(() => {
+    const startToday = new Date();
+    startToday.setHours(0, 0, 0, 0);
+    const t0 = startToday.getTime();
+    const enriched = recentRaw.map((p) => {
+      const ts = p.created_at ? new Date(p.created_at).getTime() : t0;
+      const section: ListItem["section"] = ts >= t0 ? "today" : "yesterday";
+      const rank = dayRanks[p.id] ?? 999; // 999 until its rank loads
+      return { product: p, section, rank, ts };
+    });
+    enriched.sort((a, b) => {
+      const sa = a.section === "today" ? 0 : 1;
+      const sb = b.section === "today" ? 0 : 1;
+      return sa - sb || a.rank - b.rank || b.ts - a.ts;
+    });
+    return enriched.map(({ product, section, rank }) => ({ product, section, rank }));
+  }, [recentRaw, dayRanks]);
+
   useEffect(() => {
     getFeed().then(setFeed);
     getAppStatus().then(setStatus);
   }, []);
+
+  // Prefetch the day rank of every recent product so the leaderboard is ordered
+  // by the time the user opens the list. Reuses the per-product cache.
+  useEffect(() => {
+    for (const p of recentRaw) {
+      if (dayFetched.current.has(p.id)) continue;
+      dayFetched.current.add(p.id);
+      getDayRank(p.slug).then((r) => setDayRanks((m) => ({ ...m, [p.id]: r })));
+    }
+  }, [recentRaw]);
 
   // Deep link: jump to the requested product once the feed has loaded.
   const deepLinked = useRef(false);
@@ -518,7 +549,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       if (launchStep === "done") {
         // f → list, selecting the just-launched repo wherever it ranks.
         if (input === "f") {
-          const ri = recent.findIndex((p) => p.slug === launchSlug);
+          const ri = recent.findIndex((it) => it.product.slug === launchSlug);
           setListIndex(ri >= 0 ? ri : 0);
           setMode("list");
         } else if (key.escape || key.return) {
@@ -542,7 +573,7 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
       } else if (key.return) {
         const sel = recent[listIndex];
         if (sel && feed) {
-          const fi = feed.findIndex((p) => p.id === sel.id);
+          const fi = feed.findIndex((p) => p.id === sel.product.id);
           if (fi >= 0) setIndex(fi);
         }
         setMode("feed");
@@ -612,7 +643,8 @@ export default function App({ initialSlug }: { initialSlug?: string }) {
     } else if (input === "l" || input === "L") {
       enterLaunch();
     } else if (input === "f") {
-      const ri = recent.findIndex((p) => p.id === product.id);
+      getFeed().then(setFeed); // refresh so the list reflects the latest votes/launches
+      const ri = recent.findIndex((it) => it.product.id === product.id);
       setListIndex(ri >= 0 ? ri : 0);
       setMode("list");
     }
