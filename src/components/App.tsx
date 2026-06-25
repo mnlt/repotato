@@ -589,6 +589,10 @@ export default function App({
         setListIndex((i) => Math.max(0, i - 1));
       } else if (key.downArrow) {
         setListIndex((i) => Math.min(recent.length - 1, i + 1));
+      } else if (input === "r") {
+        reloadFeed();
+        setListIndex(0); // back to the top — newest first
+        showFlash("🔄 Refreshed", palette.accent);
       } else if (key.return) {
         const sel = recent[listIndex];
         if (sel && feed) {
@@ -821,7 +825,9 @@ export default function App({
           maxVisible={Math.max(4, rows - 10)}
         />
         <Box width={cardWidth} justifyContent="center" marginTop={1}>
-          <Text color={palette.dim}>↑/↓ select   enter open   c carousel   q quit</Text>
+          <Text color={flash ? flash.color : palette.dim}>
+            {flash ? flash.text : "↑/↓ select   enter open   r refresh   c carousel   q quit"}
+          </Text>
         </Box>
       </Box>
     );
