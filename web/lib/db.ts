@@ -59,3 +59,23 @@ export function relativeDay(iso: string, now: number): string {
   if (days < 30) return `${days}d ago`;
   return `${Math.floor(days / 30)}mo ago`;
 }
+
+/** Section label for a day bucket: "Today" / "Yesterday" / "Mon, Jun 23" (UTC). */
+export function dayLabel(iso: string, now: number): string {
+  const startOfDay = (t: number) => {
+    const d = new Date(t);
+    d.setUTCHours(0, 0, 0, 0);
+    return d.getTime();
+  };
+  const diff = Math.round(
+    (startOfDay(now) - startOfDay(new Date(iso).getTime())) / 86_400_000,
+  );
+  if (diff <= 0) return "Today";
+  if (diff === 1) return "Yesterday";
+  return new Date(iso).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}

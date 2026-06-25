@@ -293,6 +293,14 @@ export default function App({
     flashTimer.current = setTimeout(() => setFlash(null), 2600);
   }
 
+  // Re-pull the feed, status and day ranks (clears caches so new launches/votes
+  // and fresh star counts show up). For long-running sessions and the list view.
+  function reloadFeed() {
+    dayFetched.current.clear();
+    getFeed().then(setFeed);
+    getAppStatus().then(setStatus);
+  }
+
   // ── Voting ────────────────────────────────────────────────────────────────
   function doVote(product: Product, dir: "up" | "down") {
     const auth = authRef.current;
@@ -653,10 +661,14 @@ export default function App({
       showFlash("🔗 Link copied — share it!", palette.accent);
     } else if (input === "l" || input === "L") {
       enterLaunch();
+    } else if (input === "r") {
+      reloadFeed();
+      setLiveStars({}); // re-pull live star counts too
+      setIndex(0);
+      showFlash("🔄 Refreshed — pulled the latest", palette.accent);
     } else if (input === "f") {
-      getFeed().then(setFeed); // refresh so the list reflects the latest votes/launches
-      const ri = recent.findIndex((it) => it.product.id === product.id);
-      setListIndex(ri >= 0 ? ri : 0);
+      reloadFeed(); // so the list reflects the latest votes/launches
+      setListIndex(0); // open at the top — newest day, top ranked
       setMode("list");
     }
   });
@@ -802,7 +814,12 @@ export default function App({
         alignItems={centered ? "center" : "flex-start"}
         paddingY={1}
       >
-        <ListScreen width={cardWidth} items={recent} selected={listIndex} />
+        <ListScreen
+          width={cardWidth}
+          items={recent}
+          selected={listIndex}
+          maxVisible={Math.max(4, rows - 10)}
+        />
         <Box width={cardWidth} justifyContent="center" marginTop={1}>
           <Text color={palette.dim}>↑/↓ select   enter open   c carousel   q quit</Text>
         </Box>
@@ -884,7 +901,7 @@ export default function App({
         <Text color={flash ? flash.color : palette.dim}>
           {flash
             ? flash.text
-            : "←/→ nav  ↑ upvote  f list  a ask  s share  L launch  q quit"}
+            : "←/→ nav  ↑ upvote  r refresh  f list  a ask  s share  L launch  q quit"}
         </Text>
       </Box>
     </Box>

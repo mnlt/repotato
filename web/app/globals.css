@@ -62,6 +62,19 @@ a { color: inherit; text-decoration: none; }
 }
 .copybtn:hover { color: var(--text); border-color: var(--potato); }
 
+/* Day-grouped feed */
+.daygroup { margin-top: 22px; }
+.dayhead {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 2px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
 /* Simple list feed (no cards) */
 .list { list-style: none; padding: 0; margin: 14px 0 0; }
 .item { display: block; padding: 12px 8px; border-bottom: 1px solid var(--border); }
