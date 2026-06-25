@@ -1,6 +1,6 @@
 {
   "name": "repotato",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "description": "Discover, try and upvote awesome GitHub repos — from your terminal. Upvote = star.",
   "keywords": [
     "cli",
