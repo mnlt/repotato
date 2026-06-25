@@ -3,6 +3,7 @@ import React from "react";
 import { render } from "ink";
 import App from "./components/App.js";
 import { runInstall } from "./install.js";
+import { resolveImageCap } from "./image/detect.js";
 
 const argv = process.argv.slice(2);
 
@@ -15,4 +16,7 @@ if (argv[0] === "install") {
 // Deep link: `repotato open <slug>` lands directly on that product.
 const initialSlug = argv[0] === "open" && argv[1] ? argv[1] : undefined;
 
-render(<App initialSlug={initialSlug} />);
+// Ask the terminal whether it can do crisp graphics BEFORE Ink takes over stdin.
+const cap = await resolveImageCap();
+
+render(<App initialSlug={initialSlug} cap={cap} />);

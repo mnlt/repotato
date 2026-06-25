@@ -16,7 +16,7 @@ import {
 import { getInstallId, hasWelcomed, markWelcomed } from "../identity.js";
 import { VERSION } from "../version.js";
 import { buildCover, placeholderCover, bandCover, type Cover } from "../image/render.js";
-import { detectImageCap } from "../image/detect.js";
+import { detectImageCap, type ImageCap } from "../image/detect.js";
 import { kittyDeleteAll } from "../image/kitty.js";
 import {
   runAskTurn,
@@ -68,12 +68,20 @@ function useTerminalSize() {
   return size;
 }
 
-export default function App({ initialSlug }: { initialSlug?: string }) {
+export default function App({
+  initialSlug,
+  cap: capProp,
+}: {
+  initialSlug?: string;
+  cap?: ImageCap;
+}) {
   const { exit } = useApp();
   const { stdout } = useStdout();
   const { cols, rows } = useTerminalSize();
   const { cardWidth, coverCols, coverRows } = computeLayout(cols, rows);
-  const cap = detectImageCap();
+  // Capability is resolved once at startup (terminal probe) and passed in; fall
+  // back to the name-based guess if rendered without it.
+  const cap = capProp ?? detectImageCap();
   const centered = cols >= cardWidth + 2;
 
   const [feed, setFeed] = useState<Product[] | null>(null);
